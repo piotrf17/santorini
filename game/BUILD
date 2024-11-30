@@ -3,7 +3,8 @@ cc_library(
     srcs = ["board.cc"],
     hdrs = ["board.h"],
     deps = [
-        "@com_google_absl//absl/log",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:check",
     ],
 )
 
@@ -12,7 +13,10 @@ cc_test(
     srcs = ["board_test.cc"],
     deps = [
         ":board",
-        "@com_google_absl//absl/log",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:vlog_is_on",
+        "@googletest//:gtest",
     ],
 )
