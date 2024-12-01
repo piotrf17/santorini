@@ -55,6 +55,23 @@ std::vector<bool> Board::PossibleMoves() const {
   return moves;
 }
 
+std::vector<int> Board::PossibleMoveIds() const {
+  std::vector<int> moves;
+  moves.reserve(128);
+  int move_idx = 0;
+  for (int worker : {0, 1}) {
+    for (int move = 0; move < 8; ++move) {
+      for (int build = 0; build < 8; ++build) {
+        if (ValidMove(worker, move, build)) {
+          moves.push_back(move_idx);
+        }
+        ++move_idx;
+      }
+    }
+  }
+  return moves;
+}
+
 bool Board::MakeMove(int move_id) {
   const int worker = move_id >> 6;
   const int move = (move_id >> 3) & 0x7;

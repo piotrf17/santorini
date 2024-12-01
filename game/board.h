@@ -16,7 +16,6 @@ std::string MoveDebugString(int move_id);
 // _ _ _ _ _
 // TODO(piotrf): support variable initial worker placement.
 // TODO(piotrf): winning move doesn't need a valid build
-// TODO(piotrf): absence of moves is a loss
 class Board {
  public:
   static const int kNumRows = 5;
@@ -45,6 +44,8 @@ class Board {
   // Returns a vector of 128 booleans, representing which of the 128
   // possible moves in any given turn are valid.
   std::vector<bool> PossibleMoves() const;
+  // Returns a vector of possible move ids.
+  std::vector<int> PossibleMoveIds() const;
 
   // Print a colored view of the board to the console.
   void Print() const;
