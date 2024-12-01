@@ -56,10 +56,13 @@ class Board {
 
   int current_player() const { return current_player_; }
 
+  const std::vector<int> past_moves() const { return past_moves_; }
+
  private:
   bool ValidMove(int worker, int move, int build) const;
 
   int current_player_;
+  std::vector<int> past_moves_;
   int heights_[kNumRows][kNumCols];
   bool worker_map_[kNumRows][kNumCols];
   int workers_[2][2][2];  // (player, worker, row/column)

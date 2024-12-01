@@ -3,6 +3,7 @@ cc_binary(
     srcs = ["run_games.cc"],
     linkopts = ["-lprofiler"],
     deps = [
+        "//ai:mcts",
         "//ai:random",
         "//game:game_runner",
         "@abseil-cpp//absl/flags:parse",

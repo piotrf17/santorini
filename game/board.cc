@@ -21,7 +21,7 @@ std::string MoveDebugString(int move_id) {
   const int worker = move_id >> 6;
   const int move = (move_id >> 3) & 0x7;
   const int build = move_id & 0x7;
-  return absl::StrCat("worker: ", worker, " move: ", move, " build: ", build);
+  return absl::StrCat("[w: ", worker, " m: ", move, " b: ", build, "]");
 }
 
 Board::Board()
@@ -77,6 +77,8 @@ bool Board::MakeMove(int move_id) {
   const int move = (move_id >> 3) & 0x7;
   const int build = move_id & 0x7;
   if (!ValidMove(worker, move, build)) return false;
+
+  past_moves_.push_back(move_id);
 
   const int worker_row = workers_[current_player_][worker][0];
   const int new_worker_row = worker_row + kMoveMap[move][0];

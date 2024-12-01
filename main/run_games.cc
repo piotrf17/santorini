@@ -6,6 +6,7 @@
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
+#include "ai/mcts.h"
 #include "ai/random.h"
 #include "game/game_runner.h"
 
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
   const int num_games = absl::GetFlag(FLAGS_num_games);
   for (int i = 0; i < num_games; ++i) {
     std::vector<std::unique_ptr<santorini::Player>> players;
-    players.push_back(std::make_unique<santorini::RandomAI>());
+    players.push_back(std::make_unique<santorini::MctsAI>(0));
     players.push_back(std::make_unique<santorini::RandomAI>());
     santorini::GameRunner game_runner(std::move(players));
 
