@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:public"])
+
 cc_library(
     name = "board",
     srcs = ["board.cc"],
@@ -5,6 +7,7 @@ cc_library(
     deps = [
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
     ],
 )
 
@@ -18,5 +21,24 @@ cc_test(
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:vlog_is_on",
         "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "game_runner",
+    srcs = ["game_runner.cc"],
+    hdrs = ["game_runner.h"],
+    deps = [
+        ":board",
+        ":player",
+        "@abseil-cpp//absl/log:check",
+    ],
+)
+
+cc_library(
+    name = "player",
+    hdrs = ["player.h"],
+    deps = [
+        ":board",
     ],
 )

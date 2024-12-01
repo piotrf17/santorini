@@ -6,6 +6,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace santorini {
 namespace {
@@ -15,6 +16,13 @@ constexpr int kMoveMap[8][2] = {
 };
 
 }  // namespace
+
+std::string MoveDebugString(int move_id) {
+  const int worker = move_id >> 6;
+  const int move = (move_id >> 3) & 0x7;
+  const int build = move_id & 0x7;
+  return absl::StrCat("worker: ", worker, " move: ", move, " build: ", build);
+}
 
 Board::Board()
     : current_player_(0),
@@ -70,6 +78,10 @@ bool Board::MakeMove(int move_id) {
 
   CHECK(heights_[build_row][build_col] < 4);
   heights_[build_row][build_col]++;
+
+  if (heights_[new_worker_row][new_worker_col] == 3) {
+    winner_ = current_player_;
+  }
 
   current_player_ = (current_player_ + 1) % 2;
 

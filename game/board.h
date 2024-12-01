@@ -6,6 +6,8 @@
 
 namespace santorini {
 
+std::string MoveDebugString(int move_id);
+
 // To simplify the implementation, the worker placements are fixed:
 // _ _ _ _ _
 // _ A _ A _
@@ -13,6 +15,8 @@ namespace santorini {
 // _ B _ B _
 // _ _ _ _ _
 // TODO(piotrf): support variable initial worker placement.
+// TODO(piotrf): winning move doesn't need a valid build
+// TODO(piotrf): absence of moves is a loss
 class Board {
  public:
   static const int kNumRows = 5;
@@ -45,6 +49,12 @@ class Board {
   // Print a colored view of the board to the console.
   void Print() const;
 
+  // Returns -1 if there is no winner yet, else the index of the
+  // winning player.
+  int winner() const { return winner_; }
+
+  int current_player() const { return current_player_; }
+
  private:
   bool ValidMove(int worker, int move, int build) const;
 
@@ -52,6 +62,7 @@ class Board {
   int heights_[kNumRows][kNumCols];
   bool worker_map_[kNumRows][kNumCols];
   int workers_[2][2][2];  // (player, worker, row/column)
+  int winner_ = -1;
 };
 
 }  // namespace santorini
