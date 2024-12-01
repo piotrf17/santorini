@@ -9,6 +9,7 @@ cc_library(
         "//game:player",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log:log",
+        "@abseil-cpp//absl/log:vlog_is_on",
         "@abseil-cpp//absl/strings:str_format",
     ],
 )

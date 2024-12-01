@@ -5,6 +5,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/log/vlog_is_on.h"
 #include "absl/strings/str_format.h"
 #include "game/board.h"
 
@@ -41,8 +42,9 @@ std::string Node::DebugString() const {
   }
 
   const double win_rate = visits > 0 ? static_cast<float>(wins) / visits : 0.0;
-  return absl::StrFormat("(%.3f %d/%d), %d children, %s", win_rate, wins,
-                         visits, children.size(), MoveDebugString(move));
+  return absl::StrFormat("p:%d, (%.3f %d/%d), %d children, %s", player,
+                         win_rate, wins, visits, children.size(),
+                         MoveDebugString(move));
 }
 
 namespace {
@@ -82,14 +84,17 @@ void ExpandNode(const Board& board, Node* node) {
 // visited at least once. After expansion, we return a child.
 Node* SelectNode(Node* node, Board* board, double c) {
   // If a leaf node, possibly expand it and continue selection.
-  if (node->children.empty()) {
+  if (!node->expanded) {
     if (!ShouldExpand(*board, *node)) {
       return node;
     }
     ExpandNode(*board, node);
   }
-  // xxx handle this condition
-  CHECK_GT(node->children.size(), 0);
+
+  // Terminal nodes should just return.
+  if (node->children.empty()) {
+    return node;
+  }
 
   // Pick the best child by UCB1 and recurse.
   std::vector<double> ucb1(node->children.size(),
@@ -151,9 +156,9 @@ void MctsAI::Iteration(Board board) {
 
   // Run rollouts on the selected node.
   for (int i = 0; i < options_.num_rollouts_per_iteration; ++i) {
-    VLOG(3) << "  MCTS running rollout " << i;
+    VLOG(5) << "  MCTS running rollout " << i;
     int winner = Rollout(board);
-    VLOG(3) << "   rollout winner is " << winner;
+    VLOG(5) << "   rollout winner is " << winner;
 
     // Bookkeeping on the winner.
     std::lock_guard<std::mutex> lock(tree_mutex_);
@@ -171,16 +176,15 @@ void MctsAI::Iteration(Board board) {
 
 int MctsAI::SelectMove(const Board& board) {
   // Unless this is the first move, update tree based on the opponent's move.
-  if (!board.past_moves().empty()) {
+  if (!board.past_moves().empty() && !tree_->children.empty()) {
     const int last_move = board.past_moves().back();
-    VLOG(1) << "MCTS updating tree for move " << MoveDebugString(last_move);
-    VLOG(1) << " previous tree_: " << tree_->DebugString();
-    CHECK(!tree_->children.empty());
+    VLOG(2) << "MCTS updating tree for move " << MoveDebugString(last_move);
+    VLOG(2) << " previous tree_: " << tree_->DebugString();
     bool found_match = false;
     for (std::unique_ptr<Node>& child : tree_->children) {
-      VLOG(2) << "  child: " << child->DebugString();
+      VLOG(4) << "  child: " << child->DebugString();
       if (child->move == last_move) {
-        VLOG(2) << "    Match found, stopping.";
+        VLOG(4) << "    Match found, stopping.";
         found_match = true;
         tree_ = std::move(child);
         tree_->parent = nullptr;
@@ -234,6 +238,11 @@ int MctsAI::SelectMove(const Board& board) {
     if (child->visits > max_visits) {
       max_visits = child->visits;
       best_child = &child;
+    }
+    if (VLOG_IS_ON(3)) {
+      for (std::unique_ptr<Node>& grand_child : child->children) {
+        VLOG(3) << "  " << grand_child->DebugString();
+      }
     }
   }
   CHECK(best_child != nullptr);

@@ -33,8 +33,15 @@ int main(int argc, char **argv) {
   const int num_games = absl::GetFlag(FLAGS_num_games);
   for (int i = 0; i < num_games; ++i) {
     std::vector<std::unique_ptr<santorini::Player>> players;
-    players.push_back(std::make_unique<santorini::MctsAI>(0));
-    players.push_back(std::make_unique<santorini::RandomAI>());
+    players.push_back(std::make_unique<santorini::MctsAI>(
+        0, santorini::MctsOptions{.c = 1.3,
+                                  .num_iterations = 100000,
+                                  .num_rollouts_per_iteration = 1,
+                                  .num_threads = 1}));
+    players.push_back(std::make_unique<santorini::MctsAI>(
+        1, santorini::MctsOptions{.num_iterations = 200000,
+                                  .num_rollouts_per_iteration = 1,
+                                  .num_threads = 1}));
     santorini::GameRunner game_runner(std::move(players));
 
     if (absl::GetFlag(FLAGS_print_board)) {
