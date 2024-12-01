@@ -35,6 +35,17 @@ cc_library(
     ],
 )
 
+cc_binary(
+    name = "game_runner_benchmark",
+    srcs = ["game_runner_benchmark.cc"],
+    linkopts = ["-lprofiler"],
+    deps = [
+        ":game_runner",
+        "//ai:random",
+        "@google_benchmark//:benchmark",
+    ],
+)
+
 cc_library(
     name = "player",
     hdrs = ["player.h"],
