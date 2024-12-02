@@ -32,6 +32,10 @@ struct Node {
   // The number of times rollouts have visited the above move.
   int visits = 0;
 
+  // The above move is a winning move. Note that in Santorini it is impossible
+  // to make a move and lose immediately.
+  bool terminal_win = false;
+
   Node* parent = nullptr;
   std::vector<std::unique_ptr<Node>> children;
 };
@@ -50,7 +54,7 @@ std::string Node::DebugString() const {
 namespace {
 
 bool ShouldExpand(const Board& board, const Node& node) {
-  if (board.winner() != -1) return false;
+  if (node.terminal_win) return false;
   CHECK(node.parent != nullptr);
   CHECK(!node.parent->children.empty());
   return node.parent->visits >= node.parent->children.size();
@@ -69,6 +73,15 @@ void ExpandNode(const Board& board, Node* node) {
     child_node->move = move;
     child_node->player = board.current_player();
     child_node->parent = node;
+
+    // Identify if this child node is a terminal node.
+    Board child_board = board;
+    CHECK(child_board.MakeMove(move));
+    if (child_board.winner() == child_node->player ||
+        child_board.PossibleMoveIds().empty()) {
+      child_node->terminal_win = true;
+    }
+
     node->children.push_back(std::move(child_node));
   }
 }
@@ -90,18 +103,20 @@ Node* SelectNode(Node* node, Board* board, double c) {
     }
     ExpandNode(*board, node);
   }
-
-  // Terminal nodes should just return.
-  if (node->children.empty()) {
-    return node;
-  }
+  CHECK(!node->children.empty());
 
   // Pick the best child by UCB1 and recurse.
+  // If any child is a guaranteed winning move, then simply select that.
+  // TODO(piotrf): should terminal_win be backpropagated somehow?
   std::vector<double> ucb1(node->children.size(),
                            std::numeric_limits<double>::infinity());
   const double logN = std::log(node->visits);
   for (size_t i = 0; i < node->children.size(); ++i) {
-    const Node& child = *node->children[i];
+    Node& child = *node->children[i];
+    if (child.terminal_win) {
+      CHECK(board->MakeMove(child.move));
+      return &child;
+    }
     if (child.visits == 0) continue;
     ucb1[i] =
         1.0 * child.wins / child.visits + c * std::sqrt(logN / child.visits);
@@ -157,8 +172,12 @@ void MctsAI::Iteration(Board board) {
   // Run rollouts on the selected node.
   for (int i = 0; i < options_.num_rollouts_per_iteration; ++i) {
     VLOG(5) << "  MCTS running rollout " << i;
-    int winner = Rollout(board);
+    const int winner = Rollout(board);
     VLOG(5) << "   rollout winner is " << winner;
+
+    if (node->terminal_win) {
+      CHECK_EQ(winner, node->player);
+    }
 
     // Bookkeeping on the winner.
     std::lock_guard<std::mutex> lock(tree_mutex_);
