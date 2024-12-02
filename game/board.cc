@@ -40,14 +40,17 @@ Board::Board()
   }
 }
 
-std::vector<bool> Board::PossibleMoves() const {
-  std::vector<bool> moves(128, false);
+std::vector<Board::Move> Board::PossibleMoves() const {
+  std::vector<Move> moves;
+  moves.reserve(128);
   int move_idx = 0;
   for (int worker : {0, 1}) {
     for (int move = 0; move < 8; ++move) {
       for (int build = 0; build < 8; ++build) {
-        VLOG(1) << "w: " << worker << " m: " << move << " b: " << build;
-        moves[move_idx] = ValidMove(worker, move, build);
+        Move m{.move_id = move_idx};
+        if (ValidMove(worker, move, build, &m.is_winning)) {
+          moves.push_back(m);
+        }
         ++move_idx;
       }
     }
@@ -55,16 +58,14 @@ std::vector<bool> Board::PossibleMoves() const {
   return moves;
 }
 
-std::vector<int> Board::PossibleMoveIds() const {
-  std::vector<int> moves;
-  moves.reserve(128);
+std::vector<bool> Board::PossibleMoveMask() const {
+  std::vector<bool> moves(128, false);
   int move_idx = 0;
   for (int worker : {0, 1}) {
     for (int move = 0; move < 8; ++move) {
       for (int build = 0; build < 8; ++build) {
-        if (ValidMove(worker, move, build)) {
-          moves.push_back(move_idx);
-        }
+        VLOG(1) << "w: " << worker << " m: " << move << " b: " << build;
+        moves[move_idx] = ValidMove(worker, move, build, nullptr);
         ++move_idx;
       }
     }
@@ -76,7 +77,7 @@ bool Board::MakeMove(int move_id) {
   const int worker = move_id >> 6;
   const int move = (move_id >> 3) & 0x7;
   const int build = move_id & 0x7;
-  if (!ValidMove(worker, move, build)) return false;
+  if (!ValidMove(worker, move, build, nullptr)) return false;
 
   past_moves_.push_back(move_id);
 
@@ -107,7 +108,7 @@ bool Board::MakeMove(int move_id) {
   return true;
 }
 
-bool Board::ValidMove(int worker, int move, int build) const {
+bool Board::ValidMove(int worker, int move, int build, bool* is_winning) const {
   const int worker_row = workers_[current_player_][worker][0];
   const int new_worker_row = worker_row + kMoveMap[move][0];
   const int build_row = new_worker_row + kMoveMap[build][0];
@@ -142,6 +143,10 @@ bool Board::ValidMove(int worker, int move, int build) const {
 
   // We can't build on top of a finished spot.
   if (heights_[build_row][build_col] == 4) return false;
+
+  if (is_winning) {
+    *is_winning = (heights_[new_worker_row][new_worker_col] == 3);
+  }
 
   return true;
 }

@@ -23,7 +23,7 @@ int GameRunner::Play() {
     winner = board.winner();
 
     // If a player is out of moves, they lose.
-    if (winner == -1 && board.PossibleMoveIds().empty()) {
+    if (winner == -1 && board.PossibleMoves().empty()) {
       winner = !board.current_player();
     }
   }

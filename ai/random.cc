@@ -5,9 +5,9 @@
 namespace santorini {
 
 int RandomAI::SelectMove(const Board& board) {
-  std::vector<int> moves = board.PossibleMoveIds();
+  std::vector<Board::Move> moves = board.PossibleMoves();
   CHECK(!moves.empty());
-  return moves[rand() % moves.size()];
+  return moves[rand() % moves.size()].move_id;
 }
 
 }  // namespace santorini

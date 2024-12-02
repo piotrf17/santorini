@@ -41,11 +41,16 @@ class Board {
   // Note that "build" is relative to the location after "move" is applied.
   bool MakeMove(int move_id);
 
+  // Returns a vector of possible moves.
+  struct Move {
+    int move_id;
+    bool is_winning;
+  };
+  std::vector<Move> PossibleMoves() const;
+
   // Returns a vector of 128 booleans, representing which of the 128
   // possible moves in any given turn are valid.
-  std::vector<bool> PossibleMoves() const;
-  // Returns a vector of possible move ids.
-  std::vector<int> PossibleMoveIds() const;
+  std::vector<bool> PossibleMoveMask() const;
 
   // Print a colored view of the board to the console.
   void Print() const;
@@ -59,7 +64,7 @@ class Board {
   const std::vector<int> past_moves() const { return past_moves_; }
 
  private:
-  bool ValidMove(int worker, int move, int build) const;
+  bool ValidMove(int worker, int move, int build, bool* is_winning) const;
 
   int current_player_;
   std::vector<int> past_moves_;

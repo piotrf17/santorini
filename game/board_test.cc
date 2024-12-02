@@ -30,9 +30,9 @@ bool CheckMoves(const std::vector<bool>& moves, int worker, int move,
   return true;
 }
 
-TEST(BoardTest, PossibleMoves_Start) {
+TEST(BoardTest, PossibleMoveMask_Start) {
   Board board;
-  std::vector<bool> moves = board.PossibleMoves();
+  std::vector<bool> moves = board.PossibleMoveMask();
   ASSERT_THAT(moves, SizeIs(128));
   // Worker 0.
   EXPECT_TRUE(CheckMoves(moves, 0, 0, {0, 0, 0, 0, 1, 0, 1, 1}));
@@ -54,7 +54,7 @@ TEST(BoardTest, PossibleMoves_Start) {
   EXPECT_TRUE(CheckMoves(moves, 1, 7, {1, 1, 0, 1, 0, 0, 1, 0}));
 }
 
-TEST(BoardTest, PossibleMoves_MadeMoves) {
+TEST(BoardTest, PossibleMoveMask_MadeMoves) {
   Board board;
 
   ASSERT_TRUE(board.MakeMove(Id(0, 0, 4)));
@@ -68,7 +68,7 @@ TEST(BoardTest, PossibleMoves_MadeMoves) {
   // 0  0  0  B  0
   // B  1  0  0  0
   {
-    std::vector<bool> moves = board.PossibleMoves();
+    std::vector<bool> moves = board.PossibleMoveMask();
     ASSERT_THAT(moves, SizeIs(128));
     EXPECT_TRUE(CheckMoves(moves, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}));
     EXPECT_TRUE(CheckMoves(moves, 0, 1, {0, 0, 0, 0, 0, 0, 0, 0}));
@@ -91,7 +91,7 @@ TEST(BoardTest, PossibleMoves_MadeMoves) {
   // B  0  0  B  0
   // 0  1  0  0  0
   {
-    std::vector<bool> moves = board.PossibleMoves();
+    std::vector<bool> moves = board.PossibleMoveMask();
     EXPECT_TRUE(CheckMoves(moves, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}));
     EXPECT_TRUE(CheckMoves(moves, 0, 1, {0, 0, 0, 0, 1, 0, 1, 1}));
     EXPECT_TRUE(CheckMoves(moves, 0, 2, {0, 0, 0, 0, 0, 0, 0, 0}));

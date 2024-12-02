@@ -66,19 +66,19 @@ void ExpandNode(const Board& board, Node* node) {
   node->expanded = true;
 
   // Look for possible moves, and if found, create a child for each move.
-  const std::vector<int> possible_moves = board.PossibleMoveIds();
+  const std::vector<Board::Move> possible_moves = board.PossibleMoves();
   node->children.reserve(possible_moves.size());
-  for (int move : possible_moves) {
+  for (const auto& move : possible_moves) {
     auto child_node = std::make_unique<Node>();
-    child_node->move = move;
+    child_node->move = move.move_id;
     child_node->player = board.current_player();
     child_node->parent = node;
 
     // Identify if this child node is a terminal node.
     Board child_board = board;
-    CHECK(child_board.MakeMove(move));
+    CHECK(child_board.MakeMove(move.move_id));
     if (child_board.winner() == child_node->player ||
-        child_board.PossibleMoveIds().empty()) {
+        child_board.PossibleMoves().empty()) {
       child_node->terminal_win = true;
     }
 
@@ -142,11 +142,22 @@ Node* SelectNode(Node* node, Board* board, double c) {
 
 int Rollout(Board board) {
   while (board.winner() == -1) {
-    const std::vector<int> possible_moves = board.PossibleMoveIds();
+    const std::vector<Board::Move> possible_moves = board.PossibleMoves();
     if (possible_moves.empty()) {
       return !board.current_player();
     }
-    const int move = possible_moves[rand() % possible_moves.size()];
+    // If there is a winning move, play that. Else, play randomly.
+    int winning_move = -1;
+    for (const auto& move : possible_moves) {
+      if (move.is_winning) {
+        winning_move = move.move_id;
+        break;
+      }
+    }
+    const int move =
+        winning_move != -1
+            ? winning_move
+            : possible_moves[rand() % possible_moves.size()].move_id;
     CHECK(board.MakeMove(move));
   }
   return board.winner();
