@@ -6,6 +6,8 @@ cc_binary(
         "-lGL",
     ],
     deps = [
+        "//ai:mcts",
+        "//game:game_runner",
         "//imgui",
         "//imgui:imgui_impl_glfw",
         "//imgui:imgui_impl_opengl2",
