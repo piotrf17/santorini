@@ -16,6 +16,7 @@ cc_binary(
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log:flags",
         "@abseil-cpp//absl/log:initialize",
+        "@abseil-cpp//absl/strings",
     ],
 )
 

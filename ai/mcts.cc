@@ -11,35 +11,6 @@
 
 namespace santorini {
 
-// A node in the game tree.
-// Technically, this also includes edges going out from this node.
-struct Node {
-  std::string DebugString() const;
-
-  // Whether or not this node has been expanded.
-  bool expanded = false;
-
-  // The move that caused us to arrive at this node, i.e. the incoming edge
-  // to this node.
-  int move = -1;
-
-  // The player that played the above move.
-  int player = -1;
-
-  // The number of wins tracked for having made the above move.
-  int wins = 0;
-
-  // The number of times rollouts have visited the above move.
-  int visits = 0;
-
-  // The above move is a winning move. Note that in Santorini it is impossible
-  // to make a move and lose immediately.
-  bool terminal_win = false;
-
-  Node* parent = nullptr;
-  std::vector<std::unique_ptr<Node>> children;
-};
-
 std::string Node::DebugString() const {
   if (move == -1) {
     return "uninitialized";
@@ -69,7 +40,7 @@ void ExpandNode(const Board& board, Node* node) {
   const std::vector<Board::Move> possible_moves = board.PossibleMoves();
   node->children.reserve(possible_moves.size());
   for (const auto& move : possible_moves) {
-    auto child_node = std::make_unique<Node>();
+    auto child_node = std::make_shared<Node>();
     child_node->move = move.move_id;
     child_node->player = board.current_player();
     child_node->parent = node;
@@ -168,7 +139,7 @@ int Rollout(Board board) {
 MctsAI::MctsAI(int player_id, const MctsOptions& options)
     : player_id_(player_id),
       options_(options),
-      tree_(std::make_unique<Node>()) {}
+      tree_(std::make_shared<Node>()) {}
 
 MctsAI::~MctsAI() {}
 
@@ -211,7 +182,7 @@ int MctsAI::SelectMove(const Board& board) {
     VLOG(2) << "MCTS updating tree for move " << MoveDebugString(last_move);
     VLOG(2) << " previous tree_: " << tree_->DebugString();
     bool found_match = false;
-    for (std::unique_ptr<Node>& child : tree_->children) {
+    for (std::shared_ptr<Node>& child : tree_->children) {
       VLOG(4) << "  child: " << child->DebugString();
       if (child->move == last_move) {
         VLOG(4) << "    Match found, stopping.";
@@ -262,15 +233,15 @@ int MctsAI::SelectMove(const Board& board) {
   // Pick the best move.
   VLOG(1) << "MCTS picking from " << tree_->children.size() << " moves.";
   int max_visits = 0;
-  std::unique_ptr<Node>* best_child = nullptr;
-  for (std::unique_ptr<Node>& child : tree_->children) {
+  std::shared_ptr<Node>* best_child = nullptr;
+  for (std::shared_ptr<Node>& child : tree_->children) {
     VLOG(2) << child->DebugString();
     if (child->visits > max_visits) {
       max_visits = child->visits;
       best_child = &child;
     }
     if (VLOG_IS_ON(3)) {
-      for (std::unique_ptr<Node>& grand_child : child->children) {
+      for (std::shared_ptr<Node>& grand_child : child->children) {
         VLOG(3) << "  " << grand_child->DebugString();
       }
     }
@@ -278,7 +249,8 @@ int MctsAI::SelectMove(const Board& board) {
   CHECK(best_child != nullptr);
   VLOG(0) << "player " << player_id_ << " estimate of winning = "
           << static_cast<double>((*best_child)->wins) / (*best_child)->visits;
-  tree_ = std::move(*best_child);
+  prev_tree_ = tree_;
+  tree_ = *best_child;
   return tree_->move;
 }
 

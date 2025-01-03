@@ -6,11 +6,14 @@
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "ai/mcts.h"
 #include "game/game_runner.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl2.h"
+
+ABSL_FLAG(int, seed, -1, "Random number seed. If -1, use time.");
 
 namespace santorini {
 
@@ -23,7 +26,7 @@ class GraphicsContext {
   GraphicsContext() {
     glfwSetErrorCallback(GlfwErrorCallback);
     CHECK(glfwInit());
-    window_ = glfwCreateWindow(1280, 720, "santorini", nullptr, nullptr);
+    window_ = glfwCreateWindow(1500, 800, "santorini", nullptr, nullptr);
     CHECK(window_ != nullptr);
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);  // Enable vsync.
@@ -134,6 +137,35 @@ void DrawBoard(const Board& board, const double grid_size) {
   }
 }
 
+void AddMctsNodes(const Node* node, int selected_move = -1) {
+  if (node == nullptr) return;
+  std::string label = node->DebugString();
+  if (node->move == selected_move) {
+    label = absl::StrCat("[SELECTED] ", label);
+  }
+  if (ImGui::TreeNode(label.c_str())) {
+    for (const auto& child : node->children) {
+      AddMctsNodes(child.get());
+    }
+    ImGui::TreePop();
+  }
+}
+
+void AddMctsWindow(const std::string& title, const MctsAI& mcts_ai) {
+  ImGui::Begin(title.c_str());
+  const Node* tree = mcts_ai.prev_tree().get();
+  if (tree != nullptr) {
+    if (ImGui::TreeNodeEx(tree->DebugString().c_str(),
+                          ImGuiTreeNodeFlags_DefaultOpen)) {
+      for (const auto& child : tree->children) {
+        AddMctsNodes(child.get(), mcts_ai.prev_move());
+      }
+      ImGui::TreePop();
+    }
+  }
+  ImGui::End();
+}
+
 }  // namespace santorini
 
 int main(int argc, char** argv) {
@@ -141,17 +173,27 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   absl::InitializeLog();
   absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
+  if (absl::GetFlag(FLAGS_seed) != -1) {
+    srand(absl::GetFlag(FLAGS_seed));
+  } else {
+    srand(time(NULL));
+  }
 
   std::vector<std::unique_ptr<santorini::Player>> players;
-  players.push_back(std::make_unique<santorini::MctsAI>(
+  auto player1_owned = std::make_unique<santorini::MctsAI>(
       0, santorini::MctsOptions{.c = 1.3,
-                                .num_iterations = 1000,
+                                .num_iterations = 100000,
                                 .num_rollouts_per_iteration = 1,
-                                .num_threads = 1}));
-  players.push_back(std::make_unique<santorini::MctsAI>(
-      1, santorini::MctsOptions{.num_iterations = 1000,
+                                .num_threads = 1});
+  const santorini::MctsAI* player1 = player1_owned.get();
+  players.push_back(std::move(player1_owned));
+  auto player2_owned = std::make_unique<santorini::MctsAI>(
+      0, santorini::MctsOptions{.c = 1.3,
+                                .num_iterations = 100000,
                                 .num_rollouts_per_iteration = 1,
-                                .num_threads = 1}));
+                                .num_threads = 1});
+  const santorini::MctsAI* player2 = player2_owned.get();
+  players.push_back(std::move(player2_owned));
   santorini::GameRunner game_runner(std::move(players));
 
   santorini::GraphicsContext window;
@@ -167,6 +209,14 @@ int main(int argc, char** argv) {
     }
     DrawBoard(game_runner.board(), 50.0);
     ImGui::End();
+
+    ImGui::SetNextWindowPos(ImVec2(300.0, 0.0));
+    ImGui::SetNextWindowSize(ImVec2(600.0, 800.0));
+    AddMctsWindow("Player 1", *player1);
+
+    ImGui::SetNextWindowPos(ImVec2(900.0, 0.0));
+    ImGui::SetNextWindowSize(ImVec2(600.0, 800.0));
+    AddMctsWindow("Player 2", *player2);
   });
 
   return 0;

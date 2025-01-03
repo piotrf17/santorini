@@ -27,7 +27,38 @@ struct MctsOptions {
   int num_threads = 1;
 };
 
-struct Node;
+// A node in the game tree.
+// Technically, this also includes edges going out from this node.
+struct Node {
+  std::string DebugString() const;
+
+  // Whether or not this node has been expanded.
+  bool expanded = false;
+
+  // The move that caused us to arrive at this node, i.e. the incoming edge
+  // to this node.
+  int move = -1;
+
+  // The player that played the above move.
+  int player = -1;
+
+  // The number of wins tracked for having made the above move.
+  int wins = 0;
+
+  // The number of times rollouts have visited the above move.
+  int visits = 0;
+
+  // The above move is a winning move. Note that in Santorini it is impossible
+  // to make a move and lose immediately.
+  bool terminal_win = false;
+
+  Node* parent = nullptr;
+
+  // Children are stored as shared_ptr to make it easier to make a copy of the
+  // tree. This is done for expediency, unique_ptr would make this code less bug
+  // prone.
+  std::vector<std::shared_ptr<Node>> children;
+};
 
 // An AI player that uses Monte Carlo Tree Search (MCTS).
 class MctsAI : public Player {
@@ -37,6 +68,9 @@ class MctsAI : public Player {
 
   int SelectMove(const Board& board) override;
 
+  std::shared_ptr<const Node> prev_tree() const { return prev_tree_; }
+  int prev_move() const { return tree_->move; }
+
  private:
   void Iteration(Board board);
 
@@ -44,7 +78,8 @@ class MctsAI : public Player {
   MctsOptions options_;
 
   std::mutex tree_mutex_;
-  std::unique_ptr<Node> tree_;
+  std::shared_ptr<Node> tree_;
+  std::shared_ptr<Node> prev_tree_;
 };
 
 }  // namespace santorini
