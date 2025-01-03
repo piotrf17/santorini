@@ -26,7 +26,7 @@ class GraphicsContext {
   GraphicsContext() {
     glfwSetErrorCallback(GlfwErrorCallback);
     CHECK(glfwInit());
-    window_ = glfwCreateWindow(1500, 800, "santorini", nullptr, nullptr);
+    window_ = glfwCreateWindow(1700, 1000, "santorini", nullptr, nullptr);
     CHECK(window_ != nullptr);
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);  // Enable vsync.
@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
   const santorini::MctsAI* player1 = player1_owned.get();
   players.push_back(std::move(player1_owned));
   auto player2_owned = std::make_unique<santorini::MctsAI>(
-      0, santorini::MctsOptions{.c = 1.3,
+      1, santorini::MctsOptions{.c = 1.3,
                                 .num_iterations = 100000,
                                 .num_rollouts_per_iteration = 1,
                                 .num_threads = 1});
@@ -211,11 +211,11 @@ int main(int argc, char** argv) {
     ImGui::End();
 
     ImGui::SetNextWindowPos(ImVec2(300.0, 0.0));
-    ImGui::SetNextWindowSize(ImVec2(600.0, 800.0));
+    ImGui::SetNextWindowSize(ImVec2(700.0, 1000.0));
     AddMctsWindow("Player 1", *player1);
 
-    ImGui::SetNextWindowPos(ImVec2(900.0, 0.0));
-    ImGui::SetNextWindowSize(ImVec2(600.0, 800.0));
+    ImGui::SetNextWindowPos(ImVec2(1000.0, 0.0));
+    ImGui::SetNextWindowSize(ImVec2(700.0, 1000.0));
     AddMctsWindow("Player 2", *player2);
   });
 

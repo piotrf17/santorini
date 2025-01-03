@@ -17,9 +17,9 @@ std::string Node::DebugString() const {
   }
 
   const double win_rate = visits > 0 ? static_cast<float>(wins) / visits : 0.0;
-  return absl::StrFormat("p:%d, (%.3f %d/%d), %d children, %s", player,
-                         win_rate, wins, visits, children.size(),
-                         MoveDebugString(move));
+  return absl::StrFormat("t:%d, p:%d, (%.3f %d/%d), %d children, %s, tw: %d",
+                         turn, player, win_rate, wins, visits, children.size(),
+                         MoveDebugString(move), terminal_win);
 }
 
 namespace {
@@ -41,6 +41,7 @@ void ExpandNode(const Board& board, Node* node) {
   node->children.reserve(possible_moves.size());
   for (const auto& move : possible_moves) {
     auto child_node = std::make_shared<Node>();
+    child_node->turn = node->turn + 1;
     child_node->move = move.move_id;
     child_node->player = board.current_player();
     child_node->parent = node;
@@ -139,7 +140,9 @@ int Rollout(Board board) {
 MctsAI::MctsAI(int player_id, const MctsOptions& options)
     : player_id_(player_id),
       options_(options),
-      tree_(std::make_shared<Node>()) {}
+      tree_(std::make_shared<Node>()) {
+  tree_->turn = player_id - 1;
+}
 
 MctsAI::~MctsAI() {}
 

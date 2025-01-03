@@ -35,6 +35,9 @@ struct Node {
   // Whether or not this node has been expanded.
   bool expanded = false;
 
+  // The turn on which this move was played. This is only used for debugging.
+  int turn = -1;
+
   // The move that caused us to arrive at this node, i.e. the incoming edge
   // to this node.
   int move = -1;
